@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GST Invoice Generator Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2962ff;
+            --secondary: #00c853;
+            --accent: #ff6d00;
+            --background: #f8f9ff;
+            --text: #2d3436;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text);
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .header h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .details-card {
+            background: #f8f9ff;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            border: 1px solid #e0e5f6;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 2px solid #e0e5f6;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(41,98,255,0.2);
+        }
+
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: white;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .invoice-table th {
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            position: sticky;
+            top: 0;
+        }
+
+        .invoice-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .amount {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(41,98,255,0.3);
+        }
+
+        .totals-card {
+            background: #f8f9ff;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.5rem;
+        }
+
+        #total {
+            font-size: 1.5rem;
+            color: var(--secondary);
+            font-weight: 700;
+        }
+
+        .qrcode-container {
+            margin: 2rem auto;
+            text-align: center;
+            padding: 1rem;
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            max-width: 200px;
+        }
+
+        .delete-btn {
+            background: #ff1744;
+        }
+
+        .delete-btn:hover {
+            box-shadow: 0 5px 15px rgba(255,23,68,0.3);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .invoice-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-file-invoice-dollar"></i> GST Invoice Pro</h1>
+            <div class="meta-info">
+                <input type="text" id="invoice-number" placeholder="INV-001" style="margin-bottom: 1rem;">
+                <input type="date" id="invoice-date" style="margin-bottom: 1rem;">
+            </div>
+        </div>
+
+        <div class="details-grid">
+            <div class="details-card">
+                <h2><i class="fas fa-building"></i> Seller Details</h2>
+                <div class="input-group">
+                    <input type="text" id="seller-name" placeholder="Seller Name" required>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="seller-gst" placeholder="GSTIN Number" required>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="seller-address" placeholder="Address" required>
+                </div>
+            </div>
+
+            <div class="details-card">
+                <h2><i class="fas fa-user-tie"></i> Buyer Details</h2>
+                <div class="input-group">
+                    <input type="text" id="customer-name" placeholder="Customer Name" required>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="customer-gst" placeholder="GSTIN Number (Optional)">
+                </div>
+                <div class="input-group">
+                    <input type="text" id="customer-address" placeholder="Address" required>
+                </div>
+            </div>
+        </div>
+
+        <table class="invoice-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Unit Price (₹)</th>
+                    <th>Qty</th>
+                    <th>GST %</th>
+                    <th>Total (₹)</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="bill-body">
+                <!-- Initial empty row -->
+                <tr class="fade-in">
+                    <td><input type="text" placeholder="Item name" required></td>
+                    <td><input type="number" class="price" value="0" min="0" step="0.01" required></td>
+                    <td><input type="number" class="quantity" value="1" min="1" required></td>
+                    <td>
+                        <select class="gst">
+                            <option value="5">5%</option>
+                            <option value="12">12%</option>
+                            <option value="18" selected>18%</option>
+                            <option value="28">28%</option>
+                        </select>
+                    </td>
+                    <td class="amount">0.00</td>
+                    <td><button class="delete-btn" onclick="removeRow(this)"><i class="fas fa-trash"></i></button></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="action-buttons">
+            <button onclick="addNewRow()" style="background: var(--secondary)">
+                <i class="fas fa-plus"></i> Add Item
+            </button>
+            <button onclick="generateQR()" style="background: #00bfa5">
+                <i class="fas fa-qrcode"></i> Generate QR
+            </button>
+            <button onclick="generatePDF()" style="background: var(--accent)">
+                <i class="fas fa-file-pdf"></i> Download PDF
+            </button>
+        </div>
+
+        <div class="totals-card">
+            <p>Subtotal: ₹<span id="subtotal">0.00</span></p>
+            <p>Total GST: ₹<span id="gst-total">0.00</span></p>
+            <p>Grand Total: ₹<span id="total">0.00</span></p>
+        </div>
+
+        <div class="qrcode-container" id="qrcode"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <script>
+        // Initialize with one row
+        let rowCount = 1;
+
+        function addNewRow() {
+            const tbody = document.getElementById('bill-body');
+            const newRow = document.createElement('tr');
+            newRow.className = 'fade-in';
+            newRow.innerHTML = `
+                <td><input type="text" placeholder="Item name" required></td>
+                <td><input type="number" class="price" value="0" min="0" step="0.01" required></td>
+                <td><input type="number" class="quantity" value="1" min="1" required></td>
+                <td>
+                    <select class="gst">
+                        <option value="5">5%</option>
+                        <option value="12">12%</option>
+                        <option value="18" selected>18%</option>
+                        <option value="28">28%</option>
+                    </select>
+                </td>
+                <td class="amount">0.00</td>
+                <td><button class="delete-btn" onclick="removeRow(this)"><i class="fas fa-trash"></i></button></td>
+            `;
+            tbody.appendChild(newRow);
+            rowCount++;
+            attachInputListeners(newRow);
+            updateTotals();
+        }
+
+        function removeRow(button) {
+            if(rowCount > 1) {
+                button.closest('tr').remove();
+                rowCount--;
+                updateTotals();
+            }
+        }
+
+        function attachInputListeners(row) {
+            const inputs = row.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('input', updateTotals);
+            });
+        }
+
+        function updateTotals() {
+            let subtotal = 0;
+            let totalGST = 0;
+
+            document.querySelectorAll('#bill-body tr').forEach(row => {
+                const price = parseFloat(row.querySelector('.price').value) || 0;
+                const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
+                const gst = parseFloat(row.querySelector('.gst').value) || 0;
+                const amount = price * quantity;
+                const gstAmount = (amount * gst) / 100;
+                
+                row.querySelector('.amount').textContent = (amount + gstAmount).toFixed(2);
+                subtotal += amount;
+                totalGST += gstAmount;
+            });
+
+            document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('gst-total').textContent = totalGST.toFixed(2);
+            document.getElementById('total').textContent = (subtotal + totalGST).toFixed(2);
+        }
+
+        function generateQR() {
+            const qrData = {
+                seller: document.getElementById('seller-name').value,
+                buyer: document.getElementById('customer-name').value,
+                total: document.getElementById('total').textContent,
+                date: document.getElementById('invoice-date').value,
+                invoiceNo: document.getElementById('invoice-number').value
+            };
+
+            const qrCodeContainer = document.getElementById('qrcode');
+            qrCodeContainer.innerHTML = '';
+            new QRCode(qrCodeContainer, JSON.stringify(qrData));
+        }
+
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add header
+            doc.setFontSize(22);
+            doc.setTextColor(41, 98, 255);
+            doc.text('TAX INVOICE', 105, 20, { align: 'center' });
+            
+            // Add company details
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Invoice No: ${document.getElementById('invoice-number').value}`, 15, 30);
+            doc.text(`Date: ${document.getElementById('invoice-date').value}`, 15, 35);
+            
+            // Add items table
+            const headers = [['Item', 'Unit Price', 'Qty', 'GST %', 'Total']];
+            const rows = [];
+            
+            document.querySelectorAll('#bill-body tr').forEach(row => {
+                const cells = [
+                    row.querySelector('input[type="text"]').value,
+                    row.querySelector('.price').value,
+                    row.querySelector('.quantity').value,
+                    row.querySelector('.gst').value,
+                    row.querySelector('.amount').textContent
+                ];
+                rows.push(cells);
+            });
+
+            doc.autoTable({
+                startY: 45,
+                head: headers,
+                body: rows,
+                theme: 'grid',
+                styles: { fontSize: 10 },
+                headStyles: { fillColor: [41, 98, 255] }
+            });
+
+            // Add totals
+            const finalY = doc.lastAutoTable.finalY + 10;
+            doc.text(`Subtotal: ₹${document.getElementById('subtotal').textContent}`, 150, finalY);
+            doc.text(`GST: ₹${document.getElementById('gst-total').textContent}`, 150, finalY + 5);
+            doc.setFontStyle('bold');
+            doc.text(`Grand Total: ₹${document.getElementById('total').textContent}`, 150, finalY + 10);
+
+            doc.save(`invoice_${document.getElementById('invoice-number').value}.pdf`);
+        }
+
+        // Initial setup
+        document.getElementById('invoice-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('invoice-number').value = `INV-${Math.floor(Math.random() * 1000)}`;
+        document.querySelectorAll('#bill-body tr').forEach(attachInputListeners);
+        document.querySelectorAll('input').forEach(input => input.addEventListener('input', updateTotals));
+    </script>
+</body>
+</html>
